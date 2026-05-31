@@ -1,5 +1,6 @@
 import sys
 import os
+import re
 
 sys.path.append(
     os.path.dirname(
@@ -37,6 +38,14 @@ class ChatRequest(BaseModel):
 # -----------------------------
 # CHAT ENDPOINT
 # -----------------------------
+
+def clean_price(price_str):
+
+    return int(
+        price_str.replace("$", "")
+                 .replace(",", "")
+                 .strip()
+    )
 
 @app.get("/")
 def home():
@@ -206,3 +215,170 @@ def search_rentals(
         "count": len(results),
         "rentals": results
     }
+
+@app.get("/analytics/average-rent")
+def average_rent():
+
+    db = SessionLocal()
+
+    rentals = db.query(Rental).all()
+
+    city_data = {}
+
+    for rental in rentals:
+
+        city = rental.location
+
+        price = clean_price(rental.price)
+
+        if city not in city_data:
+
+            city_data[city] = []
+
+        city_data[city].append(price)
+
+    results = {}
+
+    for city, prices in city_data.items():
+
+        avg = sum(prices) / len(prices)
+
+        results[city] = round(avg)
+
+    db.close()
+
+    return results
+
+@app.get("/analytics/cheapest-areas")
+def cheapest_areas():
+
+    db = SessionLocal()
+
+    rentals = db.query(Rental).all()
+
+    city_data = {}
+
+    for rental in rentals:
+
+        city = rental.location
+
+        price = clean_price(rental.price)
+
+        city_data.setdefault(city, []).append(price)
+
+    averages = []
+
+    for city, prices in city_data.items():
+
+        averages.append({
+
+            "area": city,
+
+            "avg_rent": round(sum(prices) / len(prices))
+        })
+
+    averages.sort(
+        key=lambda x: x["avg_rent"]
+    )
+
+    db.close()
+
+    return averages[:5]
+
+
+@app.get("/analytics/expensive-areas")
+def expensive_areas():
+
+    db = SessionLocal()
+
+    rentals = db.query(Rental).all()
+
+    city_data = {}
+
+    for rental in rentals:
+
+        city = rental.location
+
+        price = clean_price(rental.price)
+
+        city_data.setdefault(city, []).append(price)
+
+    averages = []
+
+    for city, prices in city_data.items():
+
+        averages.append({
+
+            "area": city,
+
+            "avg_rent": round(sum(prices) / len(prices))
+        })
+
+    averages.sort(
+        key=lambda x: x["avg_rent"],
+        reverse=True
+    )
+
+    db.close()
+
+    return averages[:5]
+
+    
+@app.get("/recommendations")
+def get_recommendations(
+    max_price: int,
+    location: str = None
+):
+
+    db = SessionLocal()
+
+    rentals = db.query(Rental).all()
+
+    results = []
+
+    for rental in rentals:
+
+        try:
+
+            price = int(
+                re.sub(
+                    r"[^\d]",
+                    "",
+                    rental.price
+                )
+            )
+
+        except:
+            continue
+
+        if price <= max_price:
+
+            if location:
+
+                if location.lower() not in rental.location.lower():
+                    continue
+
+            score = round((price / max_price) * 100)
+
+            results.append({
+                "title": rental.title,
+                "price": rental.price,
+                "location": rental.location,
+                "link": rental.link,
+                "score": score
+            })
+
+    results.sort(
+        key=lambda x: x["score"],
+        reverse=True
+    )
+
+    db.close()
+
+    return {
+        "count": len(results),
+        "recommendations": results[:10]
+    }
+
+
+
