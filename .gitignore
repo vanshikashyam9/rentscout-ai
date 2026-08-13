@@ -16,3 +16,7 @@ venv/
 
 # Data cache
 *.csv
+# Allow processed market data (needed to run the app)
+!data/processed/cleaned_market_data.csv
+!data/processed/vancouver_vacancy_rates.csv
+!data/processed/all_vancouver_vacancy_rates.csv

@@ -4,9 +4,18 @@ import pandas as pd
 # LOAD DATASET
 # -----------------------------------
 
-df = pd.read_csv(
-    "data/processed/cleaned_market_data.csv"
+import os
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+CSV_PATH = os.path.join(
+    BASE_DIR,
+    "data",
+    "processed",
+    "cleaned_market_data.csv"
 )
+
+df = pd.read_csv(CSV_PATH)
 
 # -----------------------------------
 # GET MARKET DATA FUNCTION
