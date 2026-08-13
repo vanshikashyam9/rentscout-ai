@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from openai import OpenAI
 from dotenv import load_dotenv
-from craigslist_scraper import get_craigslist_listings
+from backend.services.craigslist_scraper import get_craigslist_listings
 import os
 from backend.database.models import Base
 from backend.database.database import engine
@@ -23,9 +23,9 @@ from passlib.context import CryptContext
 from backend.database.models import User
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
-from area_recommender import recommend_areas
-from listing_analyzer import analyze_listing
-from market_intelligence import get_market_stats
+from backend.services.area_recommender import recommend_areas
+from backend.services.listing_analyzer import analyze_listing
+from backend.services.market_intelligence import get_market_stats
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -443,7 +443,12 @@ def register(request: RegisterRequest):
         "message": "User created successfully"
     }
 
-SECRET_KEY = "038ee147a01751364e95f4e5747b9313d4ac0f155248dd16a5dd7dc89aabfb20"
+SECRET_KEY = os.getenv("SECRET_KEY")
+
+if not SECRET_KEY:
+    raise RuntimeError(
+        "SECRET_KEY is not set. Add it to your .env file."
+    )
 
 ALGORITHM = "HS256"
 
