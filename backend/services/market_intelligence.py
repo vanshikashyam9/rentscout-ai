@@ -8,8 +8,11 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# services/ -> backend/ -> project root
+PROJECT_ROOT = os.path.dirname(os.path.dirname(BASE_DIR))
+
 CSV_PATH = os.path.join(
-    BASE_DIR,
+    PROJECT_ROOT,
     "data",
     "processed",
     "cleaned_market_data.csv"
