@@ -1,9 +1,16 @@
+import os
 import pandas as pd
 
-# Load cleaned dataset
-df = pd.read_csv(
-    "data/processed/cleaned_market_data.csv"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+csv_path = os.path.join(
+    BASE_DIR,
+    "data",
+    "processed",
+    "cleaned_market_data.csv"
 )
+
+df = pd.read_csv(csv_path)
 
 def recommend_areas(budget):
 

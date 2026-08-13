@@ -13,12 +13,21 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from craigslist_scraper import get_craigslist_listings
 import os
-from database.models import Base
-from database.database import engine
+from backend.database.models import Base
+from backend.database.database import engine
 Base.metadata.create_all(bind=engine)
-from database.database import SessionLocal
-from database.models import Rental
+from backend.database.database import SessionLocal
+from backend.database.models import Rental
 from fastapi import Query
+from passlib.context import CryptContext
+from backend.database.models import User
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
+from area_recommender import recommend_areas
+from listing_analyzer import analyze_listing
+from market_intelligence import get_market_stats
+from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
@@ -27,6 +36,14 @@ client = OpenAI(
 )
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # -----------------------------
 # REQUEST MODEL
@@ -380,5 +397,206 @@ def get_recommendations(
         "recommendations": results[:10]
     }
 
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto"
+)
+class RegisterRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+
+@app.post("/register")
+def register(request: RegisterRequest):
+
+    db = SessionLocal()
+
+    existing_user = db.query(User).filter(
+        User.email == request.email
+    ).first()
+
+    if existing_user:
+
+        db.close()
+
+        return {
+            "error": "Email already exists"
+        }
+
+    hashed_password = pwd_context.hash(
+        request.password
+    )
+
+    user = User(
+        username=request.username,
+        email=request.email,
+        password=hashed_password
+    )
+
+    db.add(user)
+
+    db.commit()
+
+    db.close()
+
+    return {
+        "message": "User created successfully"
+    }
+
+SECRET_KEY = "038ee147a01751364e95f4e5747b9313d4ac0f155248dd16a5dd7dc89aabfb20"
+
+ALGORITHM = "HS256"
+
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+def create_access_token(data: dict):
+
+    to_encode = data.copy()
+
+    expire = datetime.utcnow() + timedelta(
+        minutes=ACCESS_TOKEN_EXPIRE_MINUTES
+    )
+
+    to_encode.update({"exp": expire})
+
+    encoded_jwt = jwt.encode(
+        to_encode,
+        SECRET_KEY,
+        algorithm=ALGORITHM
+    )
+
+    return encoded_jwt
+
+@app.post("/login")
+def login(request: LoginRequest):
+
+    db = SessionLocal()
+
+    user = db.query(User).filter(
+        User.email == request.email
+    ).first()
+
+    if not user:
+
+        db.close()
+
+        return {
+            "error": "Invalid credentials"
+        }
+
+    if not pwd_context.verify(
+        request.password,
+        user.password
+    ):
+
+        db.close()
+
+        return {
+            "error": "Invalid credentials"
+        }
+
+    token = create_access_token(
+        {
+            "sub": user.email
+        }
+    )
+
+    db.close()
+
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }
+
+class ListingRequest(BaseModel):
+    title: str
+    price: str
+
+
+class BudgetRequest(BaseModel):
+    income: int
+    rent: int
+    food: int
+    transport: int
+    utilities: int
+    other: int
+
+@app.post("/analyze-listing")
+def analyze_rental_listing(data: ListingRequest):
+
+    result = analyze_listing(
+        data.title,
+        data.price
+    )
+
+    return result
+
+@app.get("/areas/recommend")
+def get_area_recommendations(
+    budget: int
+):
+
+    recommendations = recommend_areas(
+        budget
+    )
+
+    return {
+        "budget": budget,
+        "recommendations": recommendations
+    }
+
+@app.get("/market-stats")
+def market_stats(
+    area: str
+):
+
+    result = get_market_stats(
+        area
+    )
+
+    if result is None:
+        return {
+            "error": "Area not found"
+        }
+
+    return result
+
+@app.post("/budget-analysis")
+def budget_analysis(
+    budget: BudgetRequest
+):
+
+    total_expenses = (
+        budget.rent
+        + budget.food
+        + budget.transport
+        + budget.utilities
+        + budget.other
+    )
+
+    remaining = (
+        budget.income
+        - total_expenses
+    )
+
+    if remaining >= 1000:
+        status = "Comfortable"
+
+    elif remaining >= 300:
+        status = "Tight but survivable"
+
+    else:
+        status = "Financially risky"
+
+    return {
+        "income": budget.income,
+        "expenses": total_expenses,
+        "remaining": remaining,
+        "status": status
+    }
 
 
