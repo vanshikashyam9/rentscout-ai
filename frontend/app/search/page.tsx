@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import type { RecommendationsResponse, Recommendation } from "@/lib/types";
 import RentalCard from "@/components/RentalCard";
@@ -36,6 +37,21 @@ export default function SearchPage() {
         Enter your budget and area. Listings are ranked by affordability, with
         the reasons behind each match.
       </p>
+
+      <div className="mt-6 rounded-xl border border-line bg-moss/50 p-4 text-sm text-ink-soft">
+        <span className="font-semibold text-ink">
+          These are sample listings.
+        </span>{" "}
+        They show how RentScout ranks and scores a search — the ranking is real,
+        the units are not. To check a real listing you found somewhere else, use{" "}
+        <Link
+          href="/analyze"
+          className="font-medium text-evergreen underline underline-offset-2"
+        >
+          Scam check
+        </Link>
+        .
+      </div>
 
       <div className="mt-8 flex flex-wrap items-end gap-4 rounded-2xl border border-line bg-white p-5">
         <label className="flex-1 min-w-[180px] text-sm">

@@ -1,50 +1,32 @@
 "use client";
 
 /**
- * Live market snapshot on the landing page.
- * Proof that the frontend talks to the FastAPI backend: these numbers
- * come from the rentals table, not from hardcoded copy.
+ * Market snapshot on the landing page.
+ *
+ * Deliberately sourced from CMHC's Rental Market Survey rather than from the
+ * rentals table: the listings on this site are seeded samples, so quoting an
+ * "average asking rent" off them would present made-up numbers as market fact.
+ * The vacancy data is real, so that is what the landing page leads with.
  */
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import type { RentalListResponse } from "@/lib/types";
+import type { ApiErrorShape, VacancyTrend } from "@/lib/types";
 
-interface Pulse {
-  listings: number;
-  averageRent: number;
-  cheapest: { title: string; price: string; location: string } | null;
-}
+const AREA = "Vancouver CMA";
 
 export default function MarketPulse() {
-  const [pulse, setPulse] = useState<Pulse | null>(null);
+  const [trend, setTrend] = useState<VacancyTrend | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     api
-      .get<RentalListResponse>("/rentals-db")
+      .get<VacancyTrend | ApiErrorShape>(
+        `/market/trend?area=${encodeURIComponent(AREA)}`
+      )
       .then((data) => {
-        const priced = data.rentals.filter(
-          (r) => typeof r.price_amount === "number"
-        );
-        const avg =
-          priced.reduce((sum, r) => sum + (r.price_amount ?? 0), 0) /
-          Math.max(priced.length, 1);
-        const cheapest = [...priced].sort(
-          (a, b) => (a.price_amount ?? 0) - (b.price_amount ?? 0)
-        )[0];
-
-        setPulse({
-          listings: data.count,
-          averageRent: Math.round(avg),
-          cheapest: cheapest
-            ? {
-                title: cheapest.title,
-                price: cheapest.price,
-                location: cheapest.location,
-              }
-            : null,
-        });
+        if ("error" in data) setError(true);
+        else setTrend(data);
       })
       .catch(() => setError(true));
   }, []);
@@ -52,41 +34,54 @@ export default function MarketPulse() {
   if (error) {
     return (
       <div className="rounded-2xl border border-line bg-moss/60 p-6 text-sm text-ink-soft">
-        Live market data is unavailable. Start the backend to see current
-        listings here.
+        Market data is unavailable. Start the backend to see CMHC figures here.
       </div>
     );
   }
 
+  const series = trend?.series ?? [];
+  const latest = series.at(-1);
+  const first = series[0];
+  const change =
+    latest && first
+      ? +(latest.vacancy_rate - first.vacancy_rate).toFixed(1)
+      : null;
+
   return (
     <div className="rounded-2xl border border-line bg-white p-6 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-widest text-evergreen">
-        Live market pulse
+        Metro Vancouver right now
       </p>
 
       <dl className="mt-4 grid grid-cols-2 gap-6">
         <div>
-          <dt className="text-sm text-ink-soft">Listings tracked</dt>
+          <dt className="text-sm text-ink-soft">
+            Vacancy rate{latest ? `, ${latest.year}` : ""}
+          </dt>
           <dd className="font-display text-3xl font-600 text-ink">
-            {pulse ? pulse.listings : "—"}
+            {latest ? `${latest.vacancy_rate}%` : "—"}
           </dd>
         </div>
         <div>
-          <dt className="text-sm text-ink-soft">Average asking rent</dt>
+          <dt className="text-sm text-ink-soft">
+            Change since {first?.year ?? "—"}
+          </dt>
           <dd className="font-display text-3xl font-600 text-ink">
-            {pulse ? `$${pulse.averageRent.toLocaleString()}` : "—"}
+            {change === null ? "—" : `${change > 0 ? "+" : ""}${change}`}
           </dd>
         </div>
       </dl>
 
-      {pulse?.cheapest && (
-        <div className="mt-6 border-t border-line pt-4">
-          <p className="text-sm text-ink-soft">Lowest price right now</p>
-          <p className="mt-1 truncate text-sm font-medium text-ink">
-            {pulse.cheapest.price} · {pulse.cheapest.location}
-          </p>
-        </div>
-      )}
+      <div className="mt-6 border-t border-line pt-4">
+        <p className="text-sm text-ink-soft">
+          {latest && latest.vacancy_rate < 2
+            ? "A tight market — expect competition and move quickly."
+            : "More supply than recent years — there is room to compare."}
+        </p>
+        <p className="mt-2 text-xs text-ink-soft">
+          Source: CMHC Rental Market Survey
+        </p>
+      </div>
     </div>
   );
 }
