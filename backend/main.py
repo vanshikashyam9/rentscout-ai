@@ -7,6 +7,10 @@ sys.path.append(
         os.path.dirname(os.path.abspath(__file__))
     )
 )
+import asyncio
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 from openai import OpenAI
@@ -14,7 +18,6 @@ from dotenv import load_dotenv
 import os
 from backend.database.models import Base
 from backend.database.database import engine
-Base.metadata.create_all(bind=engine)
 from backend.database.database import SessionLocal
 from backend.database.models import Rental
 from fastapi import Query
@@ -40,7 +43,53 @@ load_dotenv()
 _openai_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=_openai_key) if _openai_key else None
 
-app = FastAPI()
+logger = logging.getLogger("rentscout")
+
+
+async def _create_tables_with_retry():
+    """
+    Create tables once the database answers, retrying in the background.
+
+    create_all is synchronous, so it runs in a worker thread — awaiting it on
+    the event loop would stall every request while the database is down.
+    """
+    for attempt in range(1, 6):
+        try:
+            await asyncio.to_thread(Base.metadata.create_all, bind=engine)
+            logger.info("Database ready.")
+            return
+        except Exception as exc:
+            wait = min(2 ** attempt, 15)
+            logger.warning(
+                "Database not ready (attempt %s/5): %s. Retrying in %ss.",
+                attempt, exc, wait
+            )
+            await asyncio.sleep(wait)
+
+    logger.error(
+        "Could not reach the database after 5 attempts. The API is serving, "
+        "but database endpoints will fail. Check DATABASE_URL."
+    )
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Kick off table creation without blocking startup.
+
+    This used to run at import time, so a database that wasn't reachable yet
+    killed the process before it could serve anything — and managed platforms
+    routinely start the app before Postgres finishes booting. Retrying inline
+    was no better: the platform's health check hits the port during those
+    retries, gets nothing, and marks the deploy failed. So the server starts
+    serving immediately and the database catches up behind it.
+    """
+    task = asyncio.create_task(_create_tables_with_retry())
+    yield
+    task.cancel()
+
+
+app = FastAPI(lifespan=lifespan)
 
 # Comma-separated list, so the deployed frontend's origin can be added without
 # a code change. Defaults to local dev.
@@ -414,6 +463,11 @@ class RegisterRequest(BaseModel):
 @app.post("/register")
 def register(request: RegisterRequest):
 
+    if not SECRET_KEY:
+        return {
+            "error": "Authentication is not configured on this server."
+        }
+
     db = SessionLocal()
 
     existing_user = db.query(User).filter(
@@ -450,9 +504,14 @@ def register(request: RegisterRequest):
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 
+# Only /register and /login need this. Raising here killed the whole API at
+# import time on any host where the variable was missing, taking down endpoints
+# that have nothing to do with auth. Those two routes refuse instead, so the
+# failure is visible and specific rather than a crash loop.
 if not SECRET_KEY:
-    raise RuntimeError(
-        "SECRET_KEY is not set. Add it to your .env file."
+    logger.warning(
+        "SECRET_KEY is not set — /register and /login are disabled. "
+        "Set it to enable authentication."
     )
 
 ALGORITHM = "HS256"
@@ -483,6 +542,11 @@ def create_access_token(data: dict):
 
 @app.post("/login")
 def login(request: LoginRequest):
+
+    if not SECRET_KEY:
+        return {
+            "error": "Authentication is not configured on this server."
+        }
 
     db = SessionLocal()
 
