@@ -46,6 +46,30 @@ client = OpenAI(api_key=_openai_key) if _openai_key else None
 logger = logging.getLogger("rentscout")
 
 
+def _seed_if_empty():
+    """
+    Put the demo listings in place on a brand-new database.
+
+    A fresh deployment has no rows, so search and recommendations return
+    nothing and the site looks broken. Seeding from a laptop needs a publicly
+    reachable database, which managed Postgres does not expose by default, so
+    the app does it itself the first time it finds the table empty.
+
+    Only ever runs against an empty table, so it cannot overwrite real data.
+    """
+    from backend.seed_data import run as seed_run
+
+    db = SessionLocal()
+    try:
+        if db.query(Rental).count() > 0:
+            return
+    finally:
+        db.close()
+
+    logger.info("No listings found — seeding demo data.")
+    seed_run()
+
+
 async def _create_tables_with_retry():
     """
     Create tables once the database answers, retrying in the background.
@@ -57,6 +81,11 @@ async def _create_tables_with_retry():
         try:
             await asyncio.to_thread(Base.metadata.create_all, bind=engine)
             logger.info("Database ready.")
+            try:
+                await asyncio.to_thread(_seed_if_empty)
+            except Exception as exc:
+                # Seeding is a convenience; never let it take down the API.
+                logger.error("Could not seed demo data: %s", exc)
             return
         except Exception as exc:
             wait = min(2 ** attempt, 15)
