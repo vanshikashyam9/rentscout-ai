@@ -375,14 +375,29 @@ def get_recommendations(
                 if location.lower() not in rental.location.lower():
                     continue
 
-            score = round((price / max_price) * 100)
+            # Cheaper relative to budget scores higher.
+            # At-budget = 70, cheapest approaches 100.
+            ratio = price / max_price
+            score = round(100 - (ratio * 30))
+
+            reasons = []
+            diff = max_price - price
+            if diff >= 200:
+                reasons.append(f"${diff} below your maximum budget")
+            elif diff >= 0:
+                reasons.append("Within your budget")
+            if location and location.lower() in (rental.location or "").lower():
+                reasons.append("In your preferred area")
 
             results.append({
+                "id": rental.id,
                 "title": rental.title,
                 "price": rental.price,
+                "price_amount": price,
                 "location": rental.location,
                 "link": rental.link,
-                "score": score
+                "score": score,
+                "reasons": reasons
             })
 
     results.sort(
