@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+// Only routes that exist. /login ships later — add it back here when it lands,
+// so the live site never links to a 404.
 const links = [
   { href: "/search", label: "Find rentals" },
   { href: "/budget", label: "Budget" },
@@ -31,10 +33,10 @@ export default function Navbar() {
         </div>
 
         <Link
-          href="/login"
+          href="/search"
           className="rounded-full border border-evergreen px-4 py-1.5 text-sm font-medium text-evergreen transition-colors hover:bg-evergreen hover:text-paper"
         >
-          Sign in
+          Get started
         </Link>
       </nav>
     </header>
