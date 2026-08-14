@@ -1,8 +1,15 @@
+import os
+
 import pandas as pd
+
+# Anchored to the project root, not the shell's working directory, so the
+# script runs the same from anywhere.
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROCESSED = os.path.join(PROJECT_ROOT, "data", "processed")
 
 # Load merged dataset
 df = pd.read_csv(
-    "data/processed/all_vancouver_vacancy_rates.csv"
+    os.path.join(PROCESSED, "all_vancouver_vacancy_rates.csv")
 )
 
 print("📊 Original Dataset:\n")
@@ -40,7 +47,7 @@ df = df.reset_index(drop=True)
 # SAVE CLEANED DATASET
 # -----------------------------------
 
-output_path = "data/processed/cleaned_market_data.csv"
+output_path = os.path.join(PROCESSED, "cleaned_market_data.csv")
 
 df.to_csv(output_path, index=False)
 

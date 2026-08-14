@@ -5,8 +5,14 @@ import os
 # CONFIG
 # -----------------------------------
 
-RAW_FOLDER = "data/raw"
-OUTPUT_FILE = "data/processed/all_vancouver_vacancy_rates.csv"
+# Anchored to the project root, not the shell's working directory, so the
+# script runs the same from anywhere.
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+RAW_FOLDER = os.path.join(PROJECT_ROOT, "data", "raw")
+OUTPUT_FILE = os.path.join(
+    PROJECT_ROOT, "data", "processed", "all_vancouver_vacancy_rates.csv"
+)
 
 # Store all yearly dataframes
 all_data = []
@@ -15,7 +21,9 @@ all_data = []
 # LOOP THROUGH FILES
 # -----------------------------------
 
-for filename in os.listdir(RAW_FOLDER):
+# sorted() because os.listdir returns filesystem order, which varies between
+# machines and runs — the merged CSV came out row-shuffled each time.
+for filename in sorted(os.listdir(RAW_FOLDER)):
 
     # Skip non-excel files
     if not filename.endswith(".xlsx"):
