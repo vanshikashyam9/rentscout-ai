@@ -19,4 +19,6 @@ USER rentscout
 
 EXPOSE 8000
 
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Shell form so $PORT expands — Railway (and most PaaS) inject the port at
+# runtime; 8000 is only the local/compose default.
+CMD uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000}

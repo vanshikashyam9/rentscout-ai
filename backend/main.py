@@ -34,9 +34,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
-)
+# Optional: without a key the app still runs; only /chat is disabled.
+# Constructing the client eagerly would crash the whole API at import time
+# on any host where OPENAI_API_KEY isn't configured.
+_openai_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=_openai_key) if _openai_key else None
 
 app = FastAPI()
 
@@ -86,6 +88,11 @@ def home():
 @app.post("/chat")
 
 def chat(request: ChatRequest):
+
+    if client is None:
+        return {
+            "error": "Chat is not configured on this server."
+        }
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
