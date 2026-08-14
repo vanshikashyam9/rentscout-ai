@@ -43,6 +43,14 @@ load_dotenv()
 _openai_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=_openai_key) if _openai_key else None
 
+# Without this the root logger sits at WARNING and every logger.info below is
+# silently dropped — including the "Database ready" line that tells you the
+# deployment is actually healthy.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s: %(name)s: %(message)s",
+)
+
 logger = logging.getLogger("rentscout")
 
 
@@ -122,13 +130,20 @@ app = FastAPI(lifespan=lifespan)
 
 # Comma-separated list, so the deployed frontend's origin can be added without
 # a code change. Defaults to local dev.
+#
+# Trailing slashes are stripped: a browser's Origin header is scheme + host +
+# port and never ends in one, so "https://site.com/" silently matches nothing.
+# Pasting a URL straight from the address bar is the obvious thing to do, and
+# it produced a site that loaded but showed no data anywhere.
 ALLOWED_ORIGINS = [
-    origin.strip()
+    origin.strip().rstrip("/")
     for origin in os.getenv(
         "ALLOWED_ORIGINS", "http://localhost:3000"
     ).split(",")
-    if origin.strip()
+    if origin.strip().rstrip("/")
 ]
+
+logger.info("CORS allowed origins: %s", ALLOWED_ORIGINS)
 
 app.add_middleware(
     CORSMiddleware,
