@@ -1,322 +1,148 @@
 # RentScout AI
 
-An AI-powered rental intelligence platform built for newcomers searching for housing in Vancouver & Metro Vancouver.
+**Before you send that deposit, check the listing.**
 
-RentScout combines:
+RentScout helps newcomers to Metro Vancouver avoid rental scams and make
+smarter housing decisions. You bring a listing you found anywhere — Craigslist,
+Facebook Marketplace, a WhatsApp group — and RentScout tells you whether it
+looks legitimate, whether the price makes sense for that neighbourhood, and
+whether you can actually afford it.
 
-* conversational AI
-* live rental scraping
-* market analytics
-* scam detection
-* recommendation systems
-
-to help users make smarter housing decisions in one of the most competitive rental markets in Canada.
+Built by a newcomer, for newcomers.
 
 ---
 
-# Why I Built This
-
-As an international student and newcomer, I realized how difficult it is to:
-
-* understand Vancouver’s rental market
-* avoid scams
-* compare neighborhoods
-* estimate living costs
-* find affordable housing quickly
-
-Most rental platforms only show listings.
-I wanted to build something that actually helps people make decisions intelligently.
-So I built RentScout — an AI-powered housing assistant that combines real rental data, analytics, and conversational AI into one platform.
-
----
-
-# Features
-
-1. AI Rental Assistant
-
-Users can ask natural language questions like:
-
-* “Can I survive in Vancouver with $3000/month?”
-* “Which area is best for students?”
-* “Is Burnaby cheaper than Downtown?”
-* “How competitive is Surrey right now?”
-
-Powered using:
-
-* OpenAI API
-* GPT-4o-mini
-* prompt engineering
-* contextual system prompts
-
-
-
-2. Interactive Budget Planner
-
-Users can estimate monthly living expenses using sliders for:
-
-* rent
-* food
-* transportation
-* utilities
-* miscellaneous expenses
-
-The app calculates:
-
-* total monthly expenses
-* remaining savings
-* affordability status
-
-Example outputs:
-
-* Comfortable
-* Tight but survivable
-* Not enough budget
-
-
-
-3. AI Budget Explanation Panel
-
-The AI explains *why* a user’s budget may or may not work in Vancouver.
-
-Example:
-
-> “Rent is consuming more than 60% of your income, which may make savings difficult in Downtown Vancouver.”
-
-This creates a more personalized and intelligent experience.
-
-
-
-4. Market Intelligence Engine
-
-RentScout uses real CMHC (Canada Mortgage and Housing Corporation) rental market data from 2022–2025.
-
-The platform analyzes:
-
-* vacancy rates
-* housing competitiveness
-* historical rental trends
-* Metro Vancouver regions
-
-This allows the app to reason using real-world housing data instead of static AI responses.
-
-
-
-5.  Vacancy Trend Dashboard
-
-Interactive visualizations built using Plotly.
-
-Users can:
-
-* analyze rental market trends
-* compare historical vacancy rates
-* explore changes across multiple years
-
-
-
-6. Multi-Area Comparison Tool
-
-Users can compare multiple areas simultaneously, including:
-
-* Downtown Vancouver
-* Burnaby
-* Surrey
-* Richmond
-* Langley
-* New Westminster
-
-This helps users understand:
-
-* which areas are competitive
-* where housing availability is improving
-* how markets differ across Metro Vancouver
-
-
-
-7. Smart Area Recommendation Engine
-
-RentScout recommends neighborhoods based on:
-
-* user budget
-* vacancy rates
-* housing competitiveness
-* affordability assumptions
-
-Example:
-
-> Lower-budget users may receive recommendations for Surrey or New Westminster due to higher affordability and vacancy rates.
-
-The recommendation engine uses:
-
-* scoring systems
-* ranking logic
-* market intelligence
-
-
-
-8. Live Craigslist Rental Scraper
-
-RentScout fetches live rental listings directly from Vancouver Craigslist.
-
-The scraper extracts:
-
-* listing title
-* price
-* location
-* listing URL
-
-This creates a real-time rental discovery experience inside the app.
-
-Built using:
-
-* requests
-* BeautifulSoup
-
----
-
-9. AI Scam Detection System
-
-Each rental listing is analyzed for scam risk.
-
-The system detects:
-
-* suspicious phrases
-* unrealistic prices
-* urgency tactics
-* risky listing behavior
-
-Example scam indicators:
-
-* “deposit first”
-* “cash only”
-* “DM quickly”
-* unusually cheap prices
-
-Listings are classified as:
-
-* Low Risk
-* Medium Risk
-* High Risk
-
-
-
-## Tech Stack
-
-### Frontend
-
-* Streamlit
-* Plotly
-
-### AI
-
-* OpenAI API
-* GPT-4o-mini
-
-### Data Engineering
-
-* Pandas
-* CMHC Rental Market Dataset
-
-### Web Scraping
-
-* BeautifulSoup
-* Requests
-
-### Python Libraries
-
-* python-dotenv
-* OpenAI SDK
-* Plotly
-* Pandas
-
-
-
-# System Architecture
-
-```text
-User
- ↓
-Streamlit UI
- ↓
-OpenAI API
- ↓
-Recommendation Engine
- ↓
-Market Intelligence
- ↓
-Live Craigslist Scraper
- ↓
-Scam Detection
+## Why I built this
+
+As an international student, I learned the hard way that Vancouver's rental
+market is confusing and full of scams that specifically target people like me:
+people who don't know what rent *should* cost, don't know their tenant rights,
+and need housing urgently.
+
+Most rental sites just show listings. None of them help you *judge* a listing.
+That's the gap RentScout fills.
+
+## What it does
+
+### 🔍 Scam check — the core feature
+Paste any listing's title, price, and area. RentScout screens it for:
+
+- **Payment red flags** — "wire transfer", "cash only", "deposit first"
+- **Pressure tactics** — manufactured urgency, "first come first served"
+- **Prices that are too good to be true** — checked against what the cheapest
+  real listings in that *specific neighbourhood* actually cost, not a flat
+  threshold
+
+Each flag is explained in plain language, and every result carries the same
+honest disclaimer: a clean scan is not a guarantee — never pay before viewing
+a unit in person.
+
+### 📊 Market data
+Real vacancy rates for 29 Metro Vancouver zones, 2022–2025, from CMHC's annual
+Rental Market Survey — with a plain-English reading of what the number means
+for you ("tight market, move fast" vs "room to negotiate").
+
+### 💰 Budget planner
+Set your income and expenses on sliders and get a live verdict: Comfortable,
+Tight but survivable, or Financially risky — plus a warning when rent crosses
+the 30%-of-income guideline.
+
+### 🏠 Search demo
+A ranked rental search showing how RentScout scores affordability, with the
+reasons behind each match. **The listings here are labelled samples** — see
+the honesty note below.
+
+## A note on honesty
+
+RentScout does **not** republish listings from other platforms. There is no
+legal way to bulk-scrape Craigslist or Facebook Marketplace, so rather than
+pretend otherwise, the search page runs on clearly-labelled sample data and
+the product focuses on what it can genuinely do: **screen the listing you
+bring to it.** The market data, however, is real CMHC data.
+
+## Tech stack
+
+| Layer | Tech |
+|---|---|
+| Backend | Python, FastAPI, SQLAlchemy |
+| Database | PostgreSQL |
+| Frontend | Next.js 16, TypeScript, Tailwind CSS |
+| Auth | JWT + bcrypt |
+| Data | CMHC Rental Market Survey (2022–2025) |
+| Infra | Docker, docker-compose, GitHub Actions CI |
+
+## Run it locally
+
+The quick way (needs Docker):
+
+```bash
+cp .env.example .env       # then fill in SECRET_KEY
+docker compose up --build
+docker compose exec api python -m backend.seed_data --reset
 ```
 
+Frontend: http://localhost:3000 · API: http://localhost:8000
 
+<details>
+<summary>Manual setup (no Docker)</summary>
 
-# Project Structure
+```bash
+# Backend — needs local Postgres running
+python3 -m venv venv
+venv/bin/pip install -r requirements.txt
+cp .env.example .env       # fill in SECRET_KEY and DATABASE_URL
+venv/bin/python -m backend.seed_data
+venv/bin/uvicorn backend.main:app --reload
 
-```text
-RentScout/
-│
-├── app.py
-├── craigslist_scraper.py
-├── listing_analyzer.py
-├── area_recommender.py
-├── market_intelligence.py
-├── extract_cmhc.py
-├── clean_market_data.py
-│
-├── data/
-│   ├── raw/
-│   └── processed/
-│
-├── requirements.txt
-└── README.md
+# Frontend
+cd frontend
+npm install
+npm run dev
 ```
 
----
+</details>
 
-# Future Improvements
+Deploying? See [DEPLOYMENT.md](DEPLOYMENT.md).
 
-Planned upgrades:
+## Project structure
 
-* Facebook Marketplace integration
-* Realtor.ca scraping
-* ML-based scam detection
-* vector search & embeddings
-* personalized recommendation system
-* semantic neighborhood search
-* database integration
-* user accounts & saved searches
-* deployment pipeline
+```
+rentscout-ai/
+├── backend/
+│   ├── main.py                  # FastAPI app and routes
+│   ├── database/                # SQLAlchemy models + session
+│   ├── services/
+│   │   ├── listing_analyzer.py  # scam screening (weighted signals)
+│   │   ├── market_intelligence.py  # CMHC vacancy data
+│   │   ├── area_recommender.py  # neighbourhood recommendations
+│   │   └── price_utils.py       # shared price parsing
+│   ├── seed_data.py             # deterministic sample listings
+│   └── scrape_craigslist.py     # local-only script, not exposed via API
+├── frontend/
+│   ├── app/                     # pages: /, /search, /budget, /market, /analyze
+│   ├── components/              # Navbar, RentalCard, VacancyChart, MarketPulse
+│   └── lib/                     # API client + shared types
+├── data/processed/              # cleaned CMHC datasets
+├── docker-compose.yml
+└── .github/workflows/ci.yml    # lint, typecheck, build, API smoke tests
+```
 
+## What's next
 
+- **RAG assistant** over the BC Residential Tenancy Act — ask "can my landlord
+  raise rent mid-lease?" and get an answer with citations to the actual law
+- User accounts UI (backend auth already works)
+- Listing submission with automatic scam screening and a moderation queue
+- Real listings from legitimately open sources (non-profit housing, university
+  housing boards)
 
-# What I Learned
+## Author
 
-This project helped me understand:
+**Vanshika Shyam** — passionate about AI engineering, intelligent systems, and
+building software around real user problems.
 
-* AI application development
-* prompt engineering
-* recommendation systems
-* data pipelines
-* web scraping
-* dashboard design
-* real-world product thinking
-* integrating AI with structured data
+## Disclaimer
 
-More importantly, it taught me how to design software around solving actual user problems.
-
-
-# ⚠ Disclaimer
-
-This project is for educational and portfolio purposes. Rental listings belong to their respective platforms and sources.
-
-
-# Author
-
-Built by Vanshika Shyam
-
-Passionate about:
-
-* AI engineering
-* intelligent systems
-* data-driven products
-* solving real-world problems with software
+RentScout is an educational and portfolio project. The scam screen is an
+automated heuristic, not a guarantee — always verify a rental in person before
+paying anything.
