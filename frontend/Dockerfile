@@ -1,11 +1,14 @@
 # Next.js frontend, built to a standalone server so the runtime image carries
 # no node_modules.
-FROM node:22-alpine AS deps
+# node:22-slim (Debian/glibc), not alpine. On musl, sharp and lightningcss fall
+# back to their WASM builds, which need @emnapi/* — packages a lockfile
+# generated on macOS never records, so `npm ci` fails there.
+FROM node:22-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-FROM node:22-alpine AS builder
+FROM node:22-slim AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -17,14 +20,14 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 RUN npm run build
 
-FROM node:22-alpine AS runner
+FROM node:22-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0
 
-RUN addgroup -S -g 1001 nodejs && adduser -S -u 1001 -G nodejs nextjs
+RUN groupadd -g 1001 nodejs && useradd -u 1001 -g nodejs -m nextjs
 
 # server.js does not serve public/ or .next/static on its own; they are copied
 # in alongside it.
