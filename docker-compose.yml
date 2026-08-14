@@ -1,0 +1,53 @@
+# Local full-stack run: Postgres + FastAPI + Next.js.
+#   docker compose up --build
+#   docker compose exec api python -m backend.seed_data --reset
+#
+# Requires SECRET_KEY in a .env file next to this one. See .env.example.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: rentscout
+      POSTGRES_PASSWORD: rentscout
+      POSTGRES_DB: rentscout
+    ports:
+      # 5433 on the host: 5432 is usually taken by a local Postgres install.
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rentscout -d rentscout"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://rentscout:rentscout@db:5432/rentscout
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required — add it to .env}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ALLOWED_ORIGINS: http://localhost:3000
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        # The app creates tables at import time, so Postgres must be accepting
+        # connections before the API starts.
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        # Baked into the client bundle at build time — this is the URL the
+        # browser calls, not an in-network address.
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

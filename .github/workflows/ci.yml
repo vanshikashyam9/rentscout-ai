@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  frontend:
+    name: Frontend — lint, types, build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+        env:
+          # Only needs to be a valid URL; nothing is fetched at build time.
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+
+  backend:
+    name: Backend — imports and seeds against Postgres
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: rentscout
+          POSTGRES_PASSWORD: rentscout
+          POSTGRES_DB: rentscout
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rentscout"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://rentscout:rentscout@localhost:5432/rentscout
+      SECRET_KEY: ci-only-not-a-real-secret
+      ALLOWED_ORIGINS: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Import the app
+        # main.py creates tables at import time, so this exercises the models,
+        # the Postgres connection, and every service import in one step.
+        run: python -c "import backend.main; print('app imported')"
+
+      - name: Seed the database
+        run: python -m backend.seed_data --reset
+
+      - name: Smoke-test the API
+        run: |
+          set -euo pipefail
+          uvicorn backend.main:app --host 127.0.0.1 --port 8000 &
+          trap 'kill %1 2>/dev/null || true' EXIT
+
+          for _ in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8000/ >/dev/null 2>&1 && break
+            sleep 1
+          done
+
+          for path in "/" "/market/zones" "/market/trend?area=Burnaby" "/recommendations?max_price=2500"; do
+            curl -fsS "http://127.0.0.1:8000$path" > /dev/null
+            echo "ok   $path"
+          done
+
+          # These two scraped Craigslist on request and were public and
+          # unauthenticated. Fail the build if they ever come back.
+          for path in /rentals /scrape; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1:8000$path")
+            if [ "$code" != "404" ]; then
+              echo "FAIL $path returned $code, expected 404"
+              exit 1
+            fi
+            echo "gone $path"
+          done

@@ -1,0 +1,13 @@
+.git
+.gitignore
+venv
+__pycache__
+**/__pycache__
+*.pyc
+.env
+.env.*
+frontend
+data/raw
+*.md
+.DS_Store
+.claude
