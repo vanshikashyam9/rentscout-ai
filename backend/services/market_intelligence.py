@@ -58,6 +58,46 @@ def get_market_stats(area_name):
         "latest_vacancy": float(round(latest_vacancy, 2))
     }
 
+def list_zones():
+    """Every CMHC zone name, for the area picker on the market page."""
+    return sorted(df["Zone"].unique().tolist())
+
+
+def get_vacancy_trend(area_name):
+    """
+    Year-by-year vacancy rate for an area.
+
+    An area string can match several CMHC zones (e.g. "Vancouver" matches the
+    city rollup and every numbered zone), so rates are averaged per year and
+    the matched zones are returned alongside for transparency.
+    """
+    matches = df[
+        df["Zone"].str.contains(area_name, case=False, na=False)
+    ]
+
+    if matches.empty:
+        return None
+
+    yearly = (
+        matches.groupby("Year")["Vacancy_Rate"]
+        .mean()
+        .reset_index()
+        .sort_values("Year")
+    )
+
+    return {
+        "area": area_name,
+        "zones_matched": sorted(matches["Zone"].unique().tolist()),
+        "series": [
+            {
+                "year": int(row.Year),
+                "vacancy_rate": float(round(row.Vacancy_Rate, 2)),
+            }
+            for row in yearly.itertuples()
+        ],
+    }
+
+
 # -----------------------------------
 # TEST ENGINE
 # -----------------------------------

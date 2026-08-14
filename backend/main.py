@@ -11,7 +11,6 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from openai import OpenAI
 from dotenv import load_dotenv
-from backend.services.craigslist_scraper import get_craigslist_listings
 import os
 from backend.database.models import Base
 from backend.database.database import engine
@@ -25,7 +24,11 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from backend.services.area_recommender import recommend_areas
 from backend.services.listing_analyzer import analyze_listing
-from backend.services.market_intelligence import get_market_stats
+from backend.services.market_intelligence import (
+    get_market_stats,
+    get_vacancy_trend,
+    list_zones,
+)
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -92,54 +95,13 @@ def chat(request: ChatRequest):
         "reply": response.choices[0].message.content
     }
 
-@app.get("/rentals")
-def get_rentals():
-
-    rentals = get_craigslist_listings()
-
-    return {
-        "count": len(rentals),
-        "rentals": rentals
-    }
-
-
-
-
-
-@app.post("/scrape")
-def scrape_and_store():
-
-    rentals = get_craigslist_listings()
-
-    db = SessionLocal()
-
-    count = 0
-
-    for item in rentals:
-
-        exists = db.query(Rental).filter(
-            Rental.link == item["link"]
-        ).first()
-
-        if not exists:
-
-            rental = Rental(
-                title=item["title"],
-                price=item["price"],
-                location=item["location"],
-                link=item["link"]
-            )
-
-            db.add(rental)
-
-            count += 1
-
-    db.commit()
-    db.close()
-
-    return {
-        "saved": count
-    }
+# NOTE: GET /rentals and POST /scrape used to live here and scraped Craigslist
+# on request. Both were public and unauthenticated, so anyone could make this
+# server scrape from its own IP — exactly the terms-of-service exposure the
+# public deployment is meant to avoid. Neither was used by the frontend.
+#
+# The scraper is now a local-only script:
+#     venv/bin/python -m backend.scrape_craigslist
 
 @app.get("/rentals-db")
 def get_rentals_db():
@@ -160,8 +122,12 @@ def get_rentals_db():
             "id": rental.id,
             "title": rental.title,
             "price": rental.price,
+            "price_amount": rental.price_amount,
             "location": rental.location,
-            "link": rental.link
+            "bedrooms": rental.bedrooms,
+            "property_type": rental.property_type,
+            "link": rental.link,
+            "source": rental.source
         })
 
     db.close()
@@ -222,8 +188,12 @@ def search_rentals(
             "id": rental.id,
             "title": rental.title,
             "price": rental.price,
+            "price_amount": rental.price_amount,
             "location": rental.location,
-            "link": rental.link
+            "bedrooms": rental.bedrooms,
+            "property_type": rental.property_type,
+            "link": rental.link,
+            "source": rental.source
         })
 
     db.close()
@@ -395,7 +365,10 @@ def get_recommendations(
                 "price": rental.price,
                 "price_amount": price,
                 "location": rental.location,
+                "bedrooms": rental.bedrooms,
+                "property_type": rental.property_type,
                 "link": rental.link,
+                "source": rental.source,
                 "score": score,
                 "reasons": reasons
             })
@@ -535,6 +508,39 @@ def login(request: LoginRequest):
 class ListingRequest(BaseModel):
     title: str
     price: str
+    location: str = None
+
+
+# Below this many listings the percentile is noise, so fall back to the
+# fixed-threshold price check instead.
+MIN_LISTINGS_FOR_FLOOR = 5
+
+
+def area_price_floor(db, location):
+    """
+    The 25th-percentile asking rent for an area, or None if too little data.
+
+    Deliberately not the median. A median mixes studios with three-bedrooms, so
+    every area lands in the same range and the comparison stops discriminating
+    between neighbourhoods. The cheap end of an area is the meaningful floor:
+    a price well below it is suspicious whatever the unit size.
+    """
+    if not location:
+        return None
+
+    amounts = sorted(
+        row[0]
+        for row in db.query(Rental.price_amount)
+        .filter(Rental.location.ilike(f"%{location}%"))
+        .filter(Rental.price_amount.isnot(None))
+        .all()
+    )
+
+    if len(amounts) < MIN_LISTINGS_FOR_FLOOR:
+        return None
+
+    index = int(0.25 * (len(amounts) - 1))
+    return amounts[index]
 
 
 class BudgetRequest(BaseModel):
@@ -548,12 +554,19 @@ class BudgetRequest(BaseModel):
 @app.post("/analyze-listing")
 def analyze_rental_listing(data: ListingRequest):
 
-    result = analyze_listing(
-        data.title,
-        data.price
-    )
+    db = SessionLocal()
 
-    return result
+    try:
+        floor = area_price_floor(db, data.location)
+    finally:
+        db.close()
+
+    return analyze_listing(
+        data.title,
+        data.price,
+        area_floor=floor,
+        area_label=data.location if floor else None
+    )
 
 @app.get("/areas/recommend")
 def get_area_recommendations(
@@ -584,6 +597,29 @@ def market_stats(
         }
 
     return result
+
+@app.get("/market/zones")
+def market_zones():
+
+    return {
+        "zones": list_zones()
+    }
+
+
+@app.get("/market/trend")
+def market_trend(
+    area: str
+):
+
+    result = get_vacancy_trend(area)
+
+    if result is None:
+        return {
+            "error": "Area not found"
+        }
+
+    return result
+
 
 @app.post("/budget-analysis")
 def budget_analysis(
