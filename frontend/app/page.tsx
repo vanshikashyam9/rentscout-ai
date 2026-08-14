@@ -1,155 +1,69 @@
-"use client";
+import Link from "next/link";
+import MarketPulse from "@/components/MarketPulse";
 
-import { useState } from "react";
-import axios from "axios";
+const features = [
+  {
+    title: "Search with judgment",
+    body: "Filter live Metro Vancouver listings by budget and area, ranked by real affordability instead of raw price.",
+  },
+  {
+    title: "Know the market",
+    body: "CMHC vacancy rates and rent trends by neighbourhood, so you negotiate with data instead of guesses.",
+  },
+  {
+    title: "Spot the scams",
+    body: "Every listing is screened for pressure tactics, off-market prices, and payment red flags before you reach out.",
+  },
+];
 
 export default function Home() {
-  const [area, setArea] = useState("");
-  const [marketStats, setMarketStats] = useState<any>(null);
-
-  const [budget, setBudget] = useState("");
-  const [areas, setAreas] = useState<any[]>([]);
-
-  const [income, setIncome] = useState("");
-  const [rent, setRent] = useState("");
-  const [food, setFood] = useState("");
-  const [transport, setTransport] = useState("");
-  const [utilities, setUtilities] = useState("");
-  const [other, setOther] = useState("");
-  const [budgetResult, setBudgetResult] = useState<any>(null);
-
-  const API = "http://127.0.0.1:8000";
-
-  const getMarketStats = async () => {
-    const res = await axios.get(
-      `${API}/market-stats?area=${area}`
-    );
-
-    setMarketStats(res.data);
-  };
-
-  const getRecommendations = async () => {
-    const res = await axios.get(
-      `${API}/areas/recommend?budget=${budget}`
-    );
-
-    setAreas(res.data.recommendations);
-  };
-
-  const analyzeBudget = async () => {
-    const res = await axios.post(
-      `${API}/budget-analysis`,
-      {
-        income: Number(income),
-        rent: Number(rent),
-        food: Number(food),
-        transport: Number(transport),
-        utilities: Number(utilities),
-        other: Number(other)
-      }
-    );
-
-    setBudgetResult(res.data);
-  };
-
   return (
-    <main style={{ padding: "40px" }}>
-      <h1>🏠 RentScout AI</h1>
+    <div className="mx-auto max-w-6xl px-6">
+      <section className="grid items-center gap-12 py-20 md:grid-cols-2 md:py-28">
+        <div>
+          <h1 className="font-display text-4xl font-700 leading-tight tracking-tight text-ink md:text-5xl">
+            Find a better place to live in Metro&nbsp;Vancouver.
+          </h1>
+          <p className="mt-5 max-w-md text-lg text-ink-soft">
+            RentScout combines live listings, CMHC market data, affordability
+            analysis, and AI recommendations — so you rent with evidence, not
+            luck.
+          </p>
 
-      <hr />
-
-      <h2>Market Statistics</h2>
-
-      <input
-        placeholder="Burnaby"
-        value={area}
-        onChange={(e) => setArea(e.target.value)}
-      />
-
-      <button onClick={getMarketStats}>
-        Check Market
-      </button>
-
-      {marketStats && (
-        <pre>
-          {JSON.stringify(marketStats, null, 2)}
-        </pre>
-      )}
-
-      <hr />
-
-      <h2>Area Recommendations</h2>
-
-      <input
-        placeholder="Budget"
-        value={budget}
-        onChange={(e) => setBudget(e.target.value)}
-      />
-
-      <button onClick={getRecommendations}>
-        Find Areas
-      </button>
-
-      {areas.map((area, index) => (
-        <div key={index}>
-          <h4>{area.area}</h4>
-          <p>Score: {area.score}</p>
-          <p>Vacancy: {area.vacancy_rate}%</p>
+          <div className="mt-8 flex flex-wrap gap-4">
+            <Link
+              href="/search"
+              className="rounded-full bg-evergreen px-6 py-3 text-sm font-semibold text-paper transition-colors hover:bg-evergreen-deep"
+            >
+              Find rentals
+            </Link>
+            <Link
+              href="/budget"
+              className="rounded-full border border-line px-6 py-3 text-sm font-semibold text-ink transition-colors hover:border-evergreen hover:text-evergreen"
+            >
+              Analyze my budget
+            </Link>
+          </div>
         </div>
-      ))}
 
-      <hr />
+        <MarketPulse />
+      </section>
 
-      <h2>Budget Analyzer</h2>
-
-      <input
-        placeholder="Income"
-        value={income}
-        onChange={(e) => setIncome(e.target.value)}
-      />
-
-      <input
-        placeholder="Rent"
-        value={rent}
-        onChange={(e) => setRent(e.target.value)}
-      />
-
-      <input
-        placeholder="Food"
-        value={food}
-        onChange={(e) => setFood(e.target.value)}
-      />
-
-      <input
-        placeholder="Transport"
-        value={transport}
-        onChange={(e) => setTransport(e.target.value)}
-      />
-
-      <input
-        placeholder="Utilities"
-        value={utilities}
-        onChange={(e) => setUtilities(e.target.value)}
-      />
-
-      <input
-        placeholder="Other"
-        value={other}
-        onChange={(e) => setOther(e.target.value)}
-      />
-
-      <br />
-      <br />
-
-      <button onClick={analyzeBudget}>
-        Analyze Budget
-      </button>
-
-      {budgetResult && (
-        <pre>
-          {JSON.stringify(budgetResult, null, 2)}
-        </pre>
-      )}
-    </main>
+      <section className="grid gap-6 pb-8 md:grid-cols-3">
+        {features.map((f) => (
+          <div
+            key={f.title}
+            className="rounded-2xl border border-line bg-white p-6"
+          >
+            <h2 className="font-display text-lg font-600 text-ink">
+              {f.title}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+              {f.body}
+            </p>
+          </div>
+        ))}
+      </section>
+    </div>
   );
 }
