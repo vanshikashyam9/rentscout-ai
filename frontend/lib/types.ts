@@ -25,6 +25,22 @@ export interface RecommendationsResponse {
   recommendations: Recommendation[];
 }
 
+export interface BudgetRequest {
+  income: number;
+  rent: number;
+  food: number;
+  transport: number;
+  utilities: number;
+  other: number;
+}
+
+export interface BudgetAnalysis {
+  income: number;
+  expenses: number;
+  remaining: number;
+  status: "Comfortable" | "Tight but survivable" | "Financially risky";
+}
+
 export interface AreaRecommendation {
   area: string;
   vacancy_rate: number;
