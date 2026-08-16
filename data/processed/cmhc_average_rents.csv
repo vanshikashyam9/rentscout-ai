@@ -1,0 +1,117 @@
+Zone,Bedrooms,Average_Rent,Survey
+Burnaby (Zones 12-14),0,1413,Oct-25
+Burnaby (Zones 12-14),1,1730,Oct-25
+Burnaby (Zones 12-14),2,2144,Oct-25
+Burnaby (Zones 12-14),3,1845,Oct-25
+City of Vancouver (Zones 1-10),0,1705,Oct-25
+City of Vancouver (Zones 1-10),1,1860,Oct-25
+City of Vancouver (Zones 1-10),2,2647,Oct-25
+City of Vancouver (Zones 1-10),3,3614,Oct-25
+Vancouver CMA,0,1667,Oct-25
+Vancouver CMA,1,1806,Oct-25
+Vancouver CMA,2,2363,Oct-25
+Vancouver CMA,3,1963,Oct-25
+West End/Downtown (Zones 1-3),0,1791,Oct-25
+West End/Downtown (Zones 1-3),1,2013,Oct-25
+West End/Downtown (Zones 1-3),2,3081,Oct-25
+West End/Downtown (Zones 1-3),3,4647,Oct-25
+Zone 1 - West End/Stanley Park,0,1684,Oct-25
+Zone 1 - West End/Stanley Park,1,1830,Oct-25
+Zone 1 - West End/Stanley Park,2,2818,Oct-25
+Zone 1 - West End/Stanley Park,3,1914,Oct-25
+Zone 10 - Southeast Vancouver,0,1366,Oct-25
+Zone 10 - Southeast Vancouver,1,1714,Oct-25
+Zone 10 - Southeast Vancouver,2,2440,Oct-25
+Zone 10 - Southeast Vancouver,3,3085,Oct-25
+Zone 11 - University Endowment Lands,0,1883,Oct-25
+Zone 11 - University Endowment Lands,1,2469,Oct-25
+Zone 11 - University Endowment Lands,2,3281,Oct-25
+Zone 11 - University Endowment Lands,3,3660,Oct-25
+Zone 12 - Central Park/Metrotown,0,1561,Oct-25
+Zone 12 - Central Park/Metrotown,1,1813,Oct-25
+Zone 12 - Central Park/Metrotown,2,2325,Oct-25
+Zone 12 - Central Park/Metrotown,3,2586,Oct-25
+Zone 13 - Southeast Burnaby,0,1429,Oct-25
+Zone 13 - Southeast Burnaby,1,1564,Oct-25
+Zone 13 - Southeast Burnaby,2,1825,Oct-25
+Zone 13 - Southeast Burnaby,3,1641,Oct-25
+Zone 14 - North Burnaby,0,1292,Oct-25
+Zone 14 - North Burnaby,1,1710,Oct-25
+Zone 14 - North Burnaby,2,2098,Oct-25
+Zone 14 - North Burnaby,3,2352,Oct-25
+Zone 15 - New Westminster,0,1531,Oct-25
+Zone 15 - New Westminster,1,1645,Oct-25
+Zone 15 - New Westminster,2,2134,Oct-25
+Zone 15 - New Westminster,3,2733,Oct-25
+Zone 16 - North Vancouver CY,0,1681,Oct-25
+Zone 16 - North Vancouver CY,1,1912,Oct-25
+Zone 16 - North Vancouver CY,2,2407,Oct-25
+Zone 16 - North Vancouver CY,3,2106,Oct-25
+Zone 17 - North Vancouver DM,0,1591,Oct-24
+Zone 17 - North Vancouver DM,1,2359,Oct-25
+Zone 17 - North Vancouver DM,2,2756,Oct-25
+Zone 17 - North Vancouver DM,3,2621,Oct-25
+Zone 18 - West Vancouver,0,1914,Oct-25
+Zone 18 - West Vancouver,1,2153,Oct-25
+Zone 18 - West Vancouver,2,3252,Oct-25
+Zone 18 - West Vancouver,3,2577,Oct-25
+Zone 19 - Richmond,0,1550,Oct-25
+Zone 19 - Richmond,1,1676,Oct-25
+Zone 19 - Richmond,2,2018,Oct-25
+Zone 19 - Richmond,3,2450,Oct-25
+Zone 2 - English Bay,0,1746,Oct-25
+Zone 2 - English Bay,1,1950,Oct-25
+Zone 2 - English Bay,2,2929,Oct-25
+Zone 2 - English Bay,3,2020,Oct-25
+Zone 20 - Delta,0,1235,Oct-25
+Zone 20 - Delta,1,1550,Oct-25
+Zone 20 - Delta,2,1760,Oct-25
+Zone 20 - Delta,3,1642,Oct-25
+Zone 21 - Surrey,0,1606,Oct-25
+Zone 21 - Surrey,1,1602,Oct-25
+Zone 21 - Surrey,2,1858,Oct-25
+Zone 21 - Surrey,3,1922,Oct-25
+Zone 22 - White Rock,0,1227,Oct-25
+Zone 22 - White Rock,1,1435,Oct-25
+Zone 22 - White Rock,2,1813,Oct-25
+Zone 22 - White Rock,3,1547,Oct-25
+Zone 23 - Langley City and Langley DM,0,1354,Oct-25
+Zone 23 - Langley City and Langley DM,1,1765,Oct-25
+Zone 23 - Langley City and Langley DM,2,2211,Oct-25
+Zone 23 - Langley City and Langley DM,3,2810,Oct-25
+Zone 24 - Tri-Cities,0,1640,Oct-25
+Zone 24 - Tri-Cities,1,1708,Oct-25
+Zone 24 - Tri-Cities,2,2177,Oct-25
+Zone 24 - Tri-Cities,3,1933,Oct-25
+Zone 25 - Maple Ridge/Pitt Meadows,0,980,Oct-25
+Zone 25 - Maple Ridge/Pitt Meadows,1,1426,Oct-25
+Zone 25 - Maple Ridge/Pitt Meadows,2,1653,Oct-25
+Zone 25 - Maple Ridge/Pitt Meadows,3,1514,Oct-25
+Zone 3 - Downtown,0,1839,Oct-25
+Zone 3 - Downtown,1,2112,Oct-25
+Zone 3 - Downtown,2,3233,Oct-25
+Zone 3 - Downtown,3,2193,Oct-25
+Zone 4 - South Granville/Oak,0,1521,Oct-25
+Zone 4 - South Granville/Oak,1,1862,Oct-25
+Zone 4 - South Granville/Oak,2,2503,Oct-25
+Zone 4 - South Granville/Oak,3,1926,Oct-25
+Zone 5 - Kitsilano/Point Grey,0,1679,Oct-25
+Zone 5 - Kitsilano/Point Grey,1,1915,Oct-25
+Zone 5 - Kitsilano/Point Grey,2,2651,Oct-25
+Zone 5 - Kitsilano/Point Grey,3,3733,Oct-25
+Zone 6 - Westside/Kerrisdale,0,1956,Oct-25
+Zone 6 - Westside/Kerrisdale,1,1905,Oct-25
+Zone 6 - Westside/Kerrisdale,2,2957,Oct-25
+Zone 6 - Westside/Kerrisdale,3,2383,Oct-25
+Zone 7 - Marpole,0,1435,Oct-25
+Zone 7 - Marpole,1,1494,Oct-25
+Zone 7 - Marpole,2,1895,Oct-25
+Zone 7 - Marpole,3,1540,Oct-25
+Zone 8 - Mount Pleasant/Renfrew Heights,0,1798,Oct-25
+Zone 8 - Mount Pleasant/Renfrew Heights,1,1704,Oct-25
+Zone 8 - Mount Pleasant/Renfrew Heights,2,2511,Oct-25
+Zone 8 - Mount Pleasant/Renfrew Heights,3,1902,Oct-25
+Zone 9 - East Hastings,0,1689,Oct-25
+Zone 9 - East Hastings,1,1693,Oct-25
+Zone 9 - East Hastings,2,2331,Oct-25
+Zone 9 - East Hastings,3,1823,Oct-25
