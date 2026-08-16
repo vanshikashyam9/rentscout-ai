@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import text
 
 from backend.database.database import engine, SessionLocal
-from backend.database.models import Rental
+from backend.database.models import Base, Rental
 
 SOURCE = "demo"
 
@@ -147,6 +147,12 @@ def build_listings():
 
 
 def run(reset: bool = False):
+    # Create the tables if they aren't there. The app builds them on startup,
+    # but this script also runs standalone — in CI and on a fresh clone —
+    # where nothing has done it yet, and the ALTER below would fail on a
+    # table that does not exist. No-ops when they already exist.
+    Base.metadata.create_all(bind=engine)
+
     # The column is new; older databases won't have it yet.
     with engine.begin() as conn:
         conn.execute(
