@@ -79,24 +79,16 @@ export default function Home() {
 
       <section className="mb-16 rounded-2xl border border-line bg-moss/50 p-6">
         <h2 className="font-display text-base font-600 text-ink">
-          About the listings on this site
+          Where the numbers come from
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-relaxed text-ink-soft">
-          RentScout does not republish listings from other rental platforms. The
-          listings in{" "}
-          <Link href="/search" className="font-medium text-evergreen underline">
-            Find rentals
-          </Link>{" "}
-          are labelled samples, used to demonstrate how listings are ranked and
-          scored. The market data is real: it comes from CMHC&apos;s annual
-          Rental Market Survey. To check a real listing you found elsewhere, use{" "}
-          <Link
-            href="/analyze"
-            className="font-medium text-evergreen underline"
-          >
-            Scam check
-          </Link>
-          .
+          RentScout is not a listings site — it does not host rentals or
+          republish them from other platforms. It checks the listing you bring
+          to it, wherever you found it. Every figure quoted here comes from
+          CMHC&apos;s annual Rental Market Survey: vacancy rates and average
+          rents by neighbourhood and unit size, published by the federal
+          housing agency and verifiable at{" "}
+          <span className="font-medium text-ink">cmhc-schl.gc.ca</span>.
         </p>
       </section>
     </div>

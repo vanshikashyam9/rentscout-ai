@@ -56,30 +56,39 @@ WEAK_POINTS = 4
 FALLBACK_CHEAP_PRICE = 1200
 
 
-def _score_price(amount, area_floor, area_label):
+BEDROOM_WORDS = {0: "studio", 1: "one-bedroom", 2: "two-bedroom", 3: "three-bedroom"}
+
+
+def _score_price(amount, market_rent, area_label, bedrooms=None):
     """
     Points and reason for the asking price.
 
-    area_floor is the cheap end of the local market (25th percentile), not the
-    average — the question is whether this price undercuts everything actually
-    available nearby, which is the classic scam hook.
+    market_rent is CMHC's average rent for the area and unit size — a published
+    market figure, so the number quoted back to the reader is one they can
+    verify, not something derived from our own sample listings.
     """
     if amount is None:
         return 0, None
 
-    if area_floor:
-        ratio = amount / area_floor
+    if market_rent:
+        ratio = amount / market_rent
         where = f" in {area_label}" if area_label else ""
-        if ratio < 0.6:
+        size = f"{BEDROOM_WORDS[bedrooms]} " if bedrooms in BEDROOM_WORDS else ""
+
+        # CMHC's average covers the whole existing stock, including long-term
+        # tenants on old rents, so a newly advertised unit normally asks *more*
+        # than this figure. Sitting well under it is therefore a stronger
+        # signal than the raw ratio suggests, and the bands reflect that.
+        if ratio < 0.7:
             return 40, (
-                f"${amount:,} undercuts almost everything{where} — the cheapest "
-                f"quarter of listings there start around ${area_floor:,}. Prices "
-                "this far below market are the most common scam hook."
+                f"${amount:,} is far below the going rate — CMHC puts the "
+                f"average {size}rent{where} at ${market_rent:,}, and newly "
+                "advertised units usually ask more than that, not less."
             )
-        if ratio < 0.8:
+        if ratio < 0.85:
             return 20, (
-                f"${amount:,} is below the cheap end of the market{where} "
-                f"(around ${area_floor:,})."
+                f"${amount:,} is below the average {size}rent{where} "
+                f"(${market_rent:,}, per CMHC)."
             )
         return 0, None
 
@@ -91,11 +100,12 @@ def _score_price(amount, area_floor, area_label):
     return 0, None
 
 
-def analyze_listing(title, price, area_floor=None, area_label=None):
+def analyze_listing(title, price, market_rent=None, area_label=None,
+                    bedrooms=None):
     """
     Screen a listing for scam indicators.
 
-    area_floor: 25th-percentile asking rent for the listing's area, if known.
+    market_rent: CMHC average rent for the area and unit size, if known.
     Enables a market-relative price check instead of a fixed threshold.
     """
     score = 0
@@ -104,7 +114,7 @@ def analyze_listing(title, price, area_floor=None, area_label=None):
     text = (title or "").lower()
 
     price_points, price_reason = _score_price(
-        parse_price(price), area_floor, area_label
+        parse_price(price), market_rent, area_label, bedrooms
     )
     score += price_points
     if price_reason:

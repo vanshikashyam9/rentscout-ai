@@ -20,6 +20,58 @@ CSV_PATH = os.path.join(
 
 df = pd.read_csv(CSV_PATH)
 
+RENTS_PATH = os.path.join(
+    PROJECT_ROOT,
+    "data",
+    "processed",
+    "cmhc_average_rents.csv"
+)
+
+# CMHC average rents by zone and bedroom type, from Table 1.1.2 of the Rental
+# Market Survey. Real market figures — the scam detector's price check reads
+# these rather than asking prices from listings in our own database.
+rents_df = pd.read_csv(RENTS_PATH)
+
+
+def get_average_rent(area_name, bedrooms=None):
+    """
+    Average market rent for an area, from CMHC.
+
+    bedrooms: 0-3 when known. Falls back to the cheapest bedroom type in the
+    area, since any unit should cost at least roughly what a studio does —
+    that keeps the comparison conservative rather than flagging a small unit
+    for being cheaper than a three-bedroom average.
+
+    Returns None when the area matches no CMHC zone.
+    """
+    matches = rents_df[
+        rents_df["Zone"].str.contains(area_name, case=False, na=False)
+    ]
+
+    if matches.empty:
+        return None
+
+    if bedrooms is not None:
+        # CMHC's largest category is "3 Bedroom +".
+        capped = min(int(bedrooms), 3)
+        exact = matches[matches["Bedrooms"] == capped]
+        if not exact.empty:
+            return {
+                "average_rent": int(round(exact["Average_Rent"].mean())),
+                "bedrooms": capped,
+                "zones_matched": sorted(exact["Zone"].unique().tolist()),
+                "survey": exact["Survey"].iloc[0],
+            }
+
+    cheapest = matches.loc[matches["Average_Rent"].idxmin()]
+
+    return {
+        "average_rent": int(cheapest["Average_Rent"]),
+        "bedrooms": int(cheapest["Bedrooms"]),
+        "zones_matched": [str(cheapest["Zone"])],
+        "survey": str(cheapest["Survey"]),
+    }
+
 # -----------------------------------
 # GET MARKET DATA FUNCTION
 # -----------------------------------

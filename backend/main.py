@@ -28,6 +28,7 @@ from datetime import datetime, timedelta
 from backend.services.area_recommender import recommend_areas
 from backend.services.listing_analyzer import analyze_listing
 from backend.services.market_intelligence import (
+    get_average_rent,
     get_market_stats,
     get_vacancy_trend,
     list_zones,
@@ -634,38 +635,7 @@ class ListingRequest(BaseModel):
     title: str
     price: str
     location: str = None
-
-
-# Below this many listings the percentile is noise, so fall back to the
-# fixed-threshold price check instead.
-MIN_LISTINGS_FOR_FLOOR = 5
-
-
-def area_price_floor(db, location):
-    """
-    The 25th-percentile asking rent for an area, or None if too little data.
-
-    Deliberately not the median. A median mixes studios with three-bedrooms, so
-    every area lands in the same range and the comparison stops discriminating
-    between neighbourhoods. The cheap end of an area is the meaningful floor:
-    a price well below it is suspicious whatever the unit size.
-    """
-    if not location:
-        return None
-
-    amounts = sorted(
-        row[0]
-        for row in db.query(Rental.price_amount)
-        .filter(Rental.location.ilike(f"%{location}%"))
-        .filter(Rental.price_amount.isnot(None))
-        .all()
-    )
-
-    if len(amounts) < MIN_LISTINGS_FOR_FLOOR:
-        return None
-
-    index = int(0.25 * (len(amounts) - 1))
-    return amounts[index]
+    bedrooms: int = None
 
 
 class BudgetRequest(BaseModel):
@@ -676,21 +646,21 @@ class BudgetRequest(BaseModel):
     utilities: int
     other: int
 
+
 @app.post("/analyze-listing")
 def analyze_rental_listing(data: ListingRequest):
 
-    db = SessionLocal()
-
-    try:
-        floor = area_price_floor(db, data.location)
-    finally:
-        db.close()
+    # CMHC average rent for the area and unit size. No database involved:
+    # comparing against our own sample listings meant quoting an invented
+    # figure back to the user as if it were the market.
+    reference = get_average_rent(data.location, data.bedrooms) if data.location else None
 
     return analyze_listing(
         data.title,
         data.price,
-        area_floor=floor,
-        area_label=data.location if floor else None
+        market_rent=reference["average_rent"] if reference else None,
+        area_label=data.location if reference else None,
+        bedrooms=reference["bedrooms"] if reference else None,
     )
 
 @app.get("/areas/recommend")

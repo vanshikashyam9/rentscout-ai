@@ -24,12 +24,14 @@ const EXAMPLES = [
     title: "URGENT! Cash only, deposit first, available immediately — DM quickly",
     price: "900",
     location: "Downtown",
+    bedrooms: "1",
   },
   {
     label: "Try a normal listing",
     title: "Bright 1 bedroom apartment in Burnaby with in-suite laundry",
     price: "2100",
     location: "Burnaby",
+    bedrooms: "1",
   },
 ];
 
@@ -37,13 +39,15 @@ export default function AnalyzePage() {
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [location, setLocation] = useState("");
+  const [bedrooms, setBedrooms] = useState("");
   const [result, setResult] = useState<ScamAnalysis | null>(null);
   const [status, setStatus] = useState<Status>("idle");
 
   async function check(
     nextTitle = title,
     nextPrice = price,
-    nextLocation = location
+    nextLocation = location,
+    nextBedrooms = bedrooms
   ) {
     if (!nextTitle.trim()) return;
     setStatus("loading");
@@ -52,6 +56,7 @@ export default function AnalyzePage() {
         title: nextTitle,
         price: nextPrice,
         location: nextLocation.trim() || null,
+        bedrooms: nextBedrooms === "" ? null : Number(nextBedrooms),
       });
       setResult(data);
       setStatus("done");
@@ -113,6 +118,21 @@ export default function AnalyzePage() {
               className="w-52 rounded-lg border border-line px-3 py-2 outline-none focus:border-evergreen"
             />
           </label>
+
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-ink">Size</span>
+            <select
+              value={bedrooms}
+              onChange={(e) => setBedrooms(e.target.value)}
+              className="rounded-lg border border-line bg-white px-3 py-2 outline-none focus:border-evergreen"
+            >
+              <option value="">Not sure</option>
+              <option value="0">Studio</option>
+              <option value="1">1 bedroom</option>
+              <option value="2">2 bedrooms</option>
+              <option value="3">3+ bedrooms</option>
+            </select>
+          </label>
         </div>
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -131,7 +151,8 @@ export default function AnalyzePage() {
                 setTitle(ex.title);
                 setPrice(ex.price);
                 setLocation(ex.location);
-                check(ex.title, ex.price, ex.location);
+                setBedrooms(ex.bedrooms);
+                check(ex.title, ex.price, ex.location, ex.bedrooms);
               }}
               className="text-sm text-ink-soft underline decoration-line underline-offset-4 hover:text-evergreen"
             >
