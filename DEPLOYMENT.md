@@ -1,46 +1,41 @@
 # Deploying RentScout
 
-Backend + Postgres on **Railway**, frontend on **Vercel**. Both free tiers are
-fine for this app. Total time: roughly 30–45 minutes.
+Backend + Postgres on **Render**, frontend on **Vercel**. Both free tiers are
+fine for this app. Total time: roughly 20–30 minutes.
 
 The order matters: backend first, because the frontend needs the backend's URL
 at **build time**.
 
 ---
 
-## Part 1 — Backend on Railway
+## Part 1 — Backend on Render
 
-1. Go to [railway.app](https://railway.app) → sign in with your GitHub account.
-2. **New Project → Deploy from GitHub repo** → pick `rentscout-ai`.
-   - When asked which branch, choose the branch you deploy from
-     (`feature/rentscout-v3` until it merges to `main`, then switch).
-   - Railway detects the root `Dockerfile` automatically.
-3. In the same project: **+ New → Database → PostgreSQL.**
-4. Open the app service → **Variables** and add:
+The repo has a `render.yaml` Blueprint that creates the API and its database
+together.
+
+1. Go to [render.com](https://render.com) → sign in with your GitHub account.
+2. **New → Blueprint** → pick `rentscout-ai`, branch `main`.
+3. Render reads `render.yaml` and shows two resources: `rentscout-api` (Docker
+   web service) and `rentscout-db` (Postgres). `DATABASE_URL` and `SECRET_KEY`
+   are filled in automatically. It asks for two values:
 
    | Variable | Value |
    |---|---|
-   | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (reference the DB service) |
-   | `SECRET_KEY` | generate: `python3 -c "import secrets; print(secrets.token_urlsafe(48))"` |
    | `ALLOWED_ORIGINS` | `http://localhost:3000` for now — updated in Part 3 |
-   | `OPENAI_API_KEY` | optional; only `/chat` uses it. Leave unset to start. |
+   | `OPENAI_API_KEY` | optional; only `/chat` uses it. Leave blank to start. |
 
-5. Open the service → **Settings → Networking → Generate Domain.**
-   You get something like `rentscout-api-production.up.railway.app`.
-   **This is your API URL — you need it in Part 2.**
-6. Wait for the deploy to go green, then check:
-   `https://<your-api-url>/` should return `{"message": "RentScout API Running"}`.
+4. **Apply.** The first Docker build takes a few minutes.
+5. Your API URL is shown at the top of the `rentscout-api` page, something like
+   `https://rentscout-api.onrender.com`. **You need it in Part 2.**
+6. Check `https://<your-api-url>/` returns `{"message": "RentScout API Running"}`.
 
-### Seed the production database
+The API creates its tables and seeds demo data on first boot when the database
+is empty — no manual seed step.
 
-In the Railway service → three-dot menu → **Command line** (or install the
-Railway CLI locally and use `railway run`):
-
-```
-python -m backend.seed_data --reset
-```
-
-You should see `Seeded 123 demo listings across 19 areas`.
+**Free-tier caveats:** the free web service sleeps after ~15 minutes idle, so
+the first request after a quiet spell takes 30–60 seconds. The free Postgres
+database expires 30 days after creation — upgrade it or recreate it before
+then.
 
 ---
 
@@ -63,18 +58,18 @@ You should see `Seeded 123 demo listings across 19 areas`.
 
 ## Part 3 — Connect them
 
-The frontend now calls the API from the browser, so the API must allow the
-Vercel origin:
+The frontend calls the API from the browser, so the API must allow the Vercel
+origin:
 
-1. Back in Railway → app service → **Variables** → set
+1. Back in Render → `rentscout-api` → **Environment** → set
 
    ```
    ALLOWED_ORIGINS=https://<your-vercel-url>,http://localhost:3000
    ```
 
-   (comma-separated, no spaces, no trailing slashes — keep localhost so local
-   dev still works against the deployed API if you want).
-2. Railway redeploys automatically on the variable change.
+   (comma-separated, no spaces — keep localhost so local dev still works
+   against the deployed API if you want).
+2. **Save Changes.** Render redeploys the API.
 
 ---
 
@@ -84,7 +79,6 @@ Open the Vercel URL and check:
 
 - [ ] Landing page shows CMHC vacancy numbers (not the "unavailable" fallback —
       if you see that, `ALLOWED_ORIGINS` or `NEXT_PUBLIC_API_URL` is wrong)
-- [ ] `/search` returns ranked sample listings for a $2,500 budget
 - [ ] `/market` renders the vacancy chart for Vancouver CMA
 - [ ] `/analyze` scores the "Try a suspicious listing" example HIGH
 - [ ] `/budget` verdict updates as sliders move
@@ -93,15 +87,23 @@ Common failures:
 
 | Symptom | Cause |
 |---|---|
-| "Market data is unavailable" on landing | Browser can't reach the API: check `NEXT_PUBLIC_API_URL` (Vercel) and CORS `ALLOWED_ORIGINS` (Railway) |
-| CORS errors in browser console | Vercel URL missing from `ALLOWED_ORIGINS`, or has a trailing slash |
-| API 500s on every DB route | `DATABASE_URL` not referencing the Postgres service |
-| Search returns 0 results | Seed step skipped — run it (Part 1) |
+| "Market data is unavailable" on landing | Browser can't reach the API: check `NEXT_PUBLIC_API_URL` (Vercel) and `ALLOWED_ORIGINS` (Render) |
+| CORS errors in browser console | Vercel URL missing from `ALLOWED_ORIGINS` |
+| First load hangs ~1 minute | Free Render service waking from sleep — expected |
+| API 500s on every DB route | `DATABASE_URL` missing, or the free database expired |
 | Changed `NEXT_PUBLIC_API_URL` but nothing changed | It's baked at build time — redeploy the frontend after changing it |
+
+---
+
+## Custom domain (optional)
+
+To serve the site at your own domain (e.g. `rentscout.ai`): Vercel → project →
+**Settings → Domains** → add it and follow the DNS records it shows at your
+registrar. Then add `https://<your-domain>` to `ALLOWED_ORIGINS` on Render.
 
 ---
 
 ## Redeploys
 
-Both platforms redeploy automatically on push to the connected branch.
+Both platforms redeploy automatically on push to `main`.
 `NEXT_PUBLIC_API_URL` only takes effect on a frontend **rebuild**.

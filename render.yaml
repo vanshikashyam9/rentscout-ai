@@ -1,0 +1,29 @@
+# Render Blueprint: the FastAPI backend and its Postgres database.
+# The frontend is deployed separately on Vercel — see DEPLOYMENT.md.
+services:
+  - type: web
+    name: rentscout-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: rentscout-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      # Set to the Vercel URL once the frontend is up (Part 3 of DEPLOYMENT.md).
+      - key: ALLOWED_ORIGINS
+        sync: false
+      # Optional; only /chat uses it.
+      - key: OPENAI_API_KEY
+        sync: false
+
+databases:
+  - name: rentscout-db
+    plan: free
+    databaseName: rentscout
+    user: rentscout
