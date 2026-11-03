@@ -93,6 +93,17 @@ jobs:
             echo "ok   $path"
           done
 
+          # The CMHC tables are filled by the app itself on first boot. The
+          # API reads them from Postgres, so check they are really there.
+          for _ in $(seq 1 30); do
+            n=$(psql "$DATABASE_URL" -Atc "select count(*) from zones" 2>/dev/null || echo 0)
+            [ "${n:-0}" -gt 0 ] && break
+            sleep 1
+          done
+          counts=$(psql "$DATABASE_URL" -Atc "select (select count(*) from zones), (select count(*) from vacancy_rates), (select count(*) from average_rents)")
+          echo "cmhc zones|vacancy_rates|average_rents = $counts"
+          [ "$counts" = "29|114|116" ] || { echo "FAIL: CMHC tables not loaded"; exit 1; }
+
           # These two scraped Craigslist on request and were public and
           # unauthenticated. Fail the build if they ever come back.
           for path in /rentals /scrape; do

@@ -29,7 +29,7 @@ together.
    `https://rentscout-api.onrender.com`. **You need it in Part 2.**
 6. Check `https://<your-api-url>/` returns `{"message": "RentScout API Running"}`.
 
-The API creates its tables and seeds demo data on first boot when the database
+The API creates its tables, loads the CMHC data from `data/processed/`, and seeds demo data on first boot when the database
 is empty — no manual seed step.
 
 **Free-tier caveats:** the free web service sleeps after ~15 minutes idle, so

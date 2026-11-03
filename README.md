@@ -104,6 +104,21 @@ npm run dev
 
 Deploying? See [DEPLOYMENT.md](DEPLOYMENT.md).
 
+## Data model
+
+Five PostgreSQL tables (SQLAlchemy models in `backend/database/models.py`):
+
+| Table | Holds |
+|---|---|
+| `rentals` | sample listings the search and recommendations run on |
+| `users` | accounts for the auth endpoints |
+| `zones` | the 29 CMHC survey zones (25 numbered zones plus 4 rollups such as Vancouver CMA) |
+| `vacancy_rates` | vacancy rate per zone per year, 2022–2025 (zone → `zones`) |
+| `average_rents` | average rent per zone by bedroom count (zone → `zones`) |
+
+The CMHC tables are filled from `data/processed/*.csv` on first boot, or by
+hand with `python -m backend.services.cmhc_loader --reload`.
+
 ## Project structure
 
 ```
@@ -113,7 +128,8 @@ rentscout-ai/
 │   ├── database/                # SQLAlchemy models + session
 │   ├── services/
 │   │   ├── listing_analyzer.py  # scam screening (weighted signals)
-│   │   ├── market_intelligence.py  # CMHC vacancy data
+│   │   ├── market_intelligence.py  # CMHC vacancy + rent queries
+│   │   ├── cmhc_loader.py       # loads data/processed CSVs into Postgres
 │   │   ├── area_recommender.py  # neighbourhood recommendations
 │   │   └── price_utils.py       # shared price parsing
 │   ├── seed_data.py             # deterministic sample listings
@@ -122,7 +138,7 @@ rentscout-ai/
 │   ├── app/                     # pages: /, /search, /budget, /market, /analyze
 │   ├── components/              # Navbar, RentalCard, VacancyChart, MarketPulse
 │   └── lib/                     # API client + shared types
-├── data/processed/              # cleaned CMHC datasets
+├── data/processed/              # cleaned CMHC datasets (loaded into Postgres)
 ├── docker-compose.yml
 └── .github/workflows/ci.yml    # lint, typecheck, build, API smoke tests
 ```

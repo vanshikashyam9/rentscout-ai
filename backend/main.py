@@ -79,6 +79,15 @@ def _seed_if_empty():
     seed_run()
 
 
+def _load_cmhc_if_empty():
+    """Fill zones / vacancy_rates / average_rents from the CSVs on a new DB."""
+    from backend.services.cmhc_loader import load_if_empty
+
+    if load_if_empty():
+        from backend.services.market_intelligence import clear_cache
+        clear_cache()
+
+
 async def _create_tables_with_retry():
     """
     Create tables once the database answers, retrying in the background.
@@ -90,6 +99,11 @@ async def _create_tables_with_retry():
         try:
             await asyncio.to_thread(Base.metadata.create_all, bind=engine)
             logger.info("Database ready.")
+            try:
+                await asyncio.to_thread(_load_cmhc_if_empty)
+            except Exception as exc:
+                # Reads fall back to the CSVs, so this is not fatal either.
+                logger.error("Could not load CMHC data: %s", exc)
             try:
                 await asyncio.to_thread(_seed_if_empty)
             except Exception as exc:
