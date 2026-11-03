@@ -1,21 +1,8 @@
-import os
-import pandas as pd
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# services/ -> backend/ -> project root
-PROJECT_ROOT = os.path.dirname(os.path.dirname(BASE_DIR))
-
-csv_path = os.path.join(
-    PROJECT_ROOT,
-    "data",
-    "processed",
-    "cleaned_market_data.csv"
-)
-
-df = pd.read_csv(csv_path)
+from backend.services.market_intelligence import get_vacancy_df
 
 def recommend_areas(budget):
+
+    df = get_vacancy_df()
 
     latest_year = df["Year"].max()
 

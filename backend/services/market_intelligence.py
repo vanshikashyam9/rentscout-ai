@@ -1,36 +1,76 @@
+import logging
+import threading
+
 import pandas as pd
+from sqlalchemy import text
+
+from backend.database.database import engine
+from backend.services import cmhc_loader
+
+logger = logging.getLogger("rentscout.market")
 
 # -----------------------------------
-# LOAD DATASET
+# DATA ACCESS
+#
+# The CMHC figures live in Postgres (zones, vacancy_rates, average_rents) and
+# are loaded from data/processed/*.csv by services/cmhc_loader.py. Queries
+# come back as DataFrames with the same columns the CSVs had, so the analysis
+# below is unchanged.
+#
+# The tables are filled in the background right after startup, so a request
+# can arrive before they exist. In that window, and if the database is down,
+# we serve from the CSVs rather than erroring — and don't cache that result,
+# so the next request picks up the database as soon as it is ready.
 # -----------------------------------
 
-import os
+_VACANCY_SQL = text("""
+    SELECT z.name AS "Zone", v.vacancy_rate AS "Vacancy_Rate", v.year AS "Year"
+    FROM vacancy_rates v JOIN zones z ON z.id = v.zone_id
+    ORDER BY z.id, v.year
+""")
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+_RENTS_SQL = text("""
+    SELECT z.name AS "Zone", a.bedrooms AS "Bedrooms",
+           a.average_rent AS "Average_Rent", a.survey AS "Survey"
+    FROM average_rents a JOIN zones z ON z.id = a.zone_id
+    ORDER BY z.id, a.bedrooms
+""")
 
-# services/ -> backend/ -> project root
-PROJECT_ROOT = os.path.dirname(os.path.dirname(BASE_DIR))
+_cache = {}
+_lock = threading.Lock()
 
-CSV_PATH = os.path.join(
-    PROJECT_ROOT,
-    "data",
-    "processed",
-    "cleaned_market_data.csv"
-)
 
-df = pd.read_csv(CSV_PATH)
+def _load(key, sql, csv_reader):
+    with _lock:
+        if key in _cache:
+            return _cache[key]
+    try:
+        frame = pd.read_sql(sql, engine)
+        if not frame.empty:
+            with _lock:
+                _cache[key] = frame
+            return frame
+        logger.warning("%s table is empty; serving from CSV for now.", key)
+    except Exception as exc:
+        logger.warning("Could not read %s from database (%s); using CSV.",
+                       key, exc.__class__.__name__)
+    return csv_reader()
 
-RENTS_PATH = os.path.join(
-    PROJECT_ROOT,
-    "data",
-    "processed",
-    "cmhc_average_rents.csv"
-)
 
-# CMHC average rents by zone and bedroom type, from Table 1.1.2 of the Rental
-# Market Survey. Real market figures — the scam detector's price check reads
-# these rather than asking prices from listings in our own database.
-rents_df = pd.read_csv(RENTS_PATH)
+def get_vacancy_df():
+    """CMHC vacancy rates: columns Zone, Vacancy_Rate, Year."""
+    return _load("vacancy", _VACANCY_SQL, cmhc_loader.read_vacancy_csv)
+
+
+def get_rents_df():
+    """CMHC average rents: columns Zone, Bedrooms, Average_Rent, Survey."""
+    return _load("rents", _RENTS_SQL, cmhc_loader.read_rents_csv)
+
+
+def clear_cache():
+    """Drop cached frames, e.g. after reloading the tables."""
+    with _lock:
+        _cache.clear()
 
 
 def get_average_rent(area_name, bedrooms=None):
@@ -44,6 +84,7 @@ def get_average_rent(area_name, bedrooms=None):
 
     Returns None when the area matches no CMHC zone.
     """
+    rents_df = get_rents_df()
     matches = rents_df[
         rents_df["Zone"].str.contains(area_name, case=False, na=False)
     ]
@@ -77,6 +118,8 @@ def get_average_rent(area_name, bedrooms=None):
 # -----------------------------------
 
 def get_market_stats(area_name):
+
+    df = get_vacancy_df()
 
     # Search matching zones
     matches = df[
@@ -112,7 +155,7 @@ def get_market_stats(area_name):
 
 def list_zones():
     """Every CMHC zone name, for the area picker on the market page."""
-    return sorted(df["Zone"].unique().tolist())
+    return sorted(get_vacancy_df()["Zone"].unique().tolist())
 
 
 def get_vacancy_trend(area_name):
@@ -123,6 +166,7 @@ def get_vacancy_trend(area_name):
     city rollup and every numbered zone), so rates are averaged per year and
     the matched zones are returned alongside for transparency.
     """
+    df = get_vacancy_df()
     matches = df[
         df["Zone"].str.contains(area_name, case=False, na=False)
     ]
